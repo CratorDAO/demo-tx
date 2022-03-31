@@ -12,8 +12,10 @@ const AuthContext = createContext({
 const ALL_CHAIN_IDS = [
   1, // MAINNET
   10, // Optimism
-  56, // Binanace
+  56, // Binance Smart Chain
   137, // Polygon
+  42161, // Arbitrum
+  43114, // Avalanche
 ];
 
 const injected = new InjectedConnector({
