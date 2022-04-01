@@ -20,7 +20,8 @@ const Home = () => {
 
   const runTx = async () => {
     try {
-      const hash = await sendTransaction(tx);
+      const txObj = JSON.parse(tx);
+      const hash = await sendTransaction(txObj);
       setTxHash(hash);
     } catch (e) {
       console.log('Tx running error:', e);
