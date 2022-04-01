@@ -54,7 +54,15 @@ const Home = () => {
         <p>Returned TxHash: {txHash ?? ''}</p>
         <textarea
           className="border p-4 rounded"
-          placeholder="Paste your txObject here"
+          placeholder={`
+            Copy & Paste your Postman result(txData) here
+            e.g.
+            {
+              "from": "...",
+              "data": "...",
+              "to": "..."
+            }
+          `}
           rows={10}
           autoFocus
           onChange={(e) => setTx(e.target.value)}
