@@ -28,6 +28,18 @@ const Home = () => {
     }
   }
 
+  const signMessage = async () => {
+    try {
+      const signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [tx, account],
+      });
+      setTxHash(signature);
+    } catch (e) {
+      console.log('Signing error:', e);
+    }
+  }
+
   return (
     <div className="container mx-auto pt-10">
       <h1 className="text-3xl font-bold underline">
@@ -46,6 +58,12 @@ const Home = () => {
         >
           Run Transaction
         </button>
+        <button
+          className="bg-blue-700 px-6 py-4 rounded text-white hover:bg-blue-800 active:bg-blue-900"
+          onClick={signMessage}
+        >
+          Sign Message
+        </button>
       </div>
       <div className="mt-10 flex flex-col gap-4">
         <p>Connection Status: {!!account ? 'Connected' : 'Disconnected'}</p>
@@ -55,13 +73,15 @@ const Home = () => {
         <textarea
           className="border p-4 rounded"
           placeholder={`
-            Copy & Paste your Postman result(txData) here
-            e.g.
+            Copy & Paste your Postman result(txData or msg) here
+            e.g.(tx)
             {
               "from": "...",
               "data": "...",
               "to": "..."
             }
+            e.g.(msg for sign)
+            string here
           `}
           rows={10}
           autoFocus
