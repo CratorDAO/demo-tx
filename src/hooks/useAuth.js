@@ -16,6 +16,7 @@ const ALL_CHAIN_IDS = [
   137, // Polygon
   42161, // Arbitrum
   43114, // Avalanche
+  250, //fantom
 ];
 
 const injected = new InjectedConnector({
