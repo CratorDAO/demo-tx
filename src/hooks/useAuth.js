@@ -14,6 +14,7 @@ const ALL_CHAIN_IDS = [
   10, // Optimism
   56, // Binance Smart Chain
   137, // Polygon
+  250, // Fantom
   42161, // Arbitrum
   43114, // Avalanche
 ];
@@ -34,7 +35,7 @@ export const AuthProvider = ({ children }) => {
           console.log('Connection Error:', e);
         }
       };
-    
+
       const disconnect = () => {
         try {
           deactivate();
@@ -42,7 +43,7 @@ export const AuthProvider = ({ children }) => {
           console.log('Connection Error:', e);
         }
       };
-    
+
       return { connect, disconnect, account, chainId }
     },
     [activate, deactivate, account, chainId]
