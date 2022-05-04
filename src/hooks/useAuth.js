@@ -18,7 +18,9 @@ const ALL_CHAIN_IDS = [
   42161, // Arbitrum
   43114, // Avalanche
   250, // Fantom
+  1284, // MoonBeam
   1285, // MoonRiver
+  2001, // Milkomeda
 ];
 
 const injected = new InjectedConnector({
