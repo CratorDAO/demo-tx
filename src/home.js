@@ -17,6 +17,7 @@ const Home = () => {
   const { account, chainId, connect, disconnect } = useAuth();
   const [tx, setTx] = useState('');
   const [txHash, setTxHash] = useState('');
+  const [encryptionPublicKey, setEncryptionPublicKey] = useState('');
 
   const runTx = async () => {
     try {
@@ -37,6 +38,18 @@ const Home = () => {
       setTxHash(signature);
     } catch (e) {
       console.log('Signing error:', e);
+    }
+  }
+
+  const getEncPubKey = async () => {
+    try {
+      const encryptionPublicKey = await window.ethereum.request({
+        method: 'eth_getEncryptionPublicKey',
+        params: [account],
+      });
+      setEncryptionPublicKey(encryptionPublicKey);
+    } catch (e) {
+      console.log('Encryption error:', e);
     }
   }
 
@@ -64,12 +77,19 @@ const Home = () => {
         >
           Sign Message
         </button>
+        <button
+          className="bg-purple-700 px-6 py-4 rounded text-white hover:bg-purple-800 active:bg-purple-900"
+          onClick={getEncPubKey}
+        >
+          Encryption Key
+        </button>
       </div>
       <div className="mt-10 flex flex-col gap-4">
         <p>Connection Status: {!!account ? 'Connected' : 'Disconnected'}</p>
         <p>Selected Network: {chainId ?? ''}</p>
         <p>Wallet Address: {account}</p>
         <p>Returned TxHash: {txHash ?? ''}</p>
+        <p>Encryption Public Key: {encryptionPublicKey ?? ''}</p>
         <textarea
           className="border p-4 rounded"
           placeholder={`
