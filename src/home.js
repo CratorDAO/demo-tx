@@ -18,6 +18,7 @@ const Home = () => {
   const [tx, setTx] = useState('');
   const [txHash, setTxHash] = useState('');
   const [encryptionPublicKey, setEncryptionPublicKey] = useState('');
+  const [decryptedData, setDecryptedData] = useState('');
 
   const runTx = async () => {
     try {
@@ -53,6 +54,18 @@ const Home = () => {
     }
   }
 
+  const decryptMessage = async () => {
+    try {
+      const callData = await window.ethereum.request({
+        method: 'eth_decrypt',
+        params: [tx, account]
+      });
+      setDecryptedData(callData);
+    } catch (e) {
+      console.log('Encryption error:', e);
+    }
+  }
+
   return (
     <div className="container mx-auto pt-10">
       <h1 className="text-3xl font-bold underline">
@@ -83,6 +96,12 @@ const Home = () => {
         >
           Encryption Key
         </button>
+        <button
+          className="bg-orange-700 px-6 py-4 rounded text-white hover:bg-orange-800 active:bg-orange-900"
+          onClick={decryptMessage}
+        >
+          Decrypt Message
+        </button>
       </div>
       <div className="mt-10 flex flex-col gap-4">
         <p>Connection Status: {!!account ? 'Connected' : 'Disconnected'}</p>
@@ -90,6 +109,7 @@ const Home = () => {
         <p>Wallet Address: {account}</p>
         <p>Returned TxHash: {txHash ?? ''}</p>
         <p>Encryption Public Key: {encryptionPublicKey ?? ''}</p>
+        <p>Decrypted Data: {decryptedData ?? ''}</p>
         <textarea
           className="border p-4 rounded"
           placeholder={`
