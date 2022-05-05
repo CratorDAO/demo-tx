@@ -109,7 +109,7 @@ const Home = () => {
         <p>Wallet Address: {account}</p>
         <p>Returned TxHash: {txHash ?? ''}</p>
         <p>Encryption Public Key: {encryptionPublicKey ?? ''}</p>
-        <p>Decrypted Data: {decryptedData ?? ''}</p>
+        <p className="break-all">Decrypted Data: {decryptedData ?? ''}</p>
         <textarea
           className="border p-4 rounded"
           placeholder={`
