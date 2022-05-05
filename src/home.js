@@ -109,7 +109,6 @@ const Home = () => {
         <p>Wallet Address: {account}</p>
         <p>Returned TxHash: {txHash ?? ''}</p>
         <p>Encryption Public Key: {encryptionPublicKey ?? ''}</p>
-        <p className="break-all">Decrypted Data: {decryptedData ?? ''}</p>
         <textarea
           className="border p-4 rounded"
           placeholder={`
@@ -127,6 +126,7 @@ const Home = () => {
           autoFocus
           onChange={(e) => setTx(e.target.value)}
         ></textarea>
+        <p className="break-all">Decrypted Data: {decryptedData ?? ''}</p>
       </div>
     </div>
   );
