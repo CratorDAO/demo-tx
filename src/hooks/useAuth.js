@@ -15,6 +15,7 @@ const ALL_CHAIN_IDS = [
   56, // Binance Smart Chain
   137, // Polygon
   250, // Fantom
+  288, // Boba
   42161, // Arbitrum
   43114, // Avalanche
   250, // Fantom
