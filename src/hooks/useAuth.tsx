@@ -1,8 +1,16 @@
+import React from 'react';
 import { useWeb3React } from "@web3-react/core";
 import { InjectedConnector } from "@web3-react/injected-connector";
 import { createContext, useContext, useMemo } from "react"
 
-const AuthContext = createContext({
+type AuthContextType = {
+  account: string | null | undefined;
+  chainId?: number;
+  connect: () => void;
+  disconnect: () => void;
+};
+
+const AuthContext = createContext<AuthContextType>({
   account: '',
   chainId: undefined,
   connect: () => {},
@@ -27,7 +35,11 @@ const injected = new InjectedConnector({
   supportedChainIds: ALL_CHAIN_IDS,
 });
 
-export const AuthProvider = ({ children }) => {
+type Props = {
+  children?: React.ReactNode;
+};
+
+export const AuthProvider: React.FC<Props> = ({ children }) => {
   const { activate, deactivate, account, chainId } = useWeb3React();
 
   const memoedValue = useMemo(

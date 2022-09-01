@@ -1,3 +1,4 @@
+import React from 'react';
 import { createWeb3ReactRoot, Web3ReactProvider } from "@web3-react/core";
 import { AuthProvider } from "./hooks/useAuth";
 import getLibrary from "./hooks/getLibrary";

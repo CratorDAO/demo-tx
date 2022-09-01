@@ -1,7 +1,9 @@
 import { useState } from "react";
 import useAuth from "./hooks/useAuth";
 
-const sendTransaction = async (data) => {
+declare var window: any;
+
+const sendTransaction = async (data: any) => {
   try {
     const txHash = await window.ethereum.request({
       method: 'eth_sendTransaction',
@@ -19,6 +21,12 @@ const Home = () => {
   const [txHash, setTxHash] = useState('');
   const [encryptionPublicKey, setEncryptionPublicKey] = useState('');
   const [decryptedData, setDecryptedData] = useState('');
+
+  const connectKeplr = async () => {
+    // getKeplrFromWindow().then((keplr) => {
+    //   console.log('Keplr:', keplr);
+    // })
+  };
 
   const runTx = async () => {
     try {
@@ -76,7 +84,13 @@ const Home = () => {
           className="bg-orange-400 px-6 py-4 rounded text-white hover:bg-orange-500 active:bg-orange-600"
           onClick={!!account ? disconnect : connect}
         >
-          {!!account ? 'Disconnect Wallet': 'Connect Wallet'}
+          {!!account ? 'Disconnect Metamask': 'Connect Metamask'}
+        </button>
+        <button
+          className="bg-orange-400 px-6 py-4 rounded text-white hover:bg-orange-500 active:bg-orange-600"
+          onClick={!!account ? disconnect : connectKeplr}
+        >
+          {!!account ? 'Disconnect Keplr': 'Connect Keplr'}
         </button>
         <button
           className="bg-blue-400 px-6 py-4 rounded text-white hover:bg-blue-500 active:bg-blue-600"
