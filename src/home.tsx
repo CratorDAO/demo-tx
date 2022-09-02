@@ -1,7 +1,17 @@
+import { getKeplrFromWindow } from '@keplr-wallet/stores';
+import { AccountData, SigningCosmosClient } from '@cosmjs/launchpad';
 import { useState } from "react";
 import useAuth from "./hooks/useAuth";
+import Metamask from './components/Metamask';
+import KeplrWallet from './components/Keplr';
+import { Keplr } from '@keplr-wallet/types';
+import { SigningStargateClient } from '@cosmjs/stargate';
+
+require('dotenv');
 
 declare var window: any;
+// const RPC_URL = process.env.RPC_URL || 'https://rpc.sentry-01.theta-testnet.polypore.xyz';
+const keplrChainId = 'cosmoshub-4';
 
 const sendTransaction = async (data: any) => {
   try {
@@ -21,11 +31,58 @@ const Home = () => {
   const [txHash, setTxHash] = useState('');
   const [encryptionPublicKey, setEncryptionPublicKey] = useState('');
   const [decryptedData, setDecryptedData] = useState('');
+  const [keplr, setKeplr] = useState<Keplr>();
+  const [keplrAccount, setKeplrAccount] = useState<AccountData>();
 
   const connectKeplr = async () => {
-    // getKeplrFromWindow().then((keplr) => {
-    //   console.log('Keplr:', keplr);
-    // })
+    const keplr = await getKeplrFromWindow();
+    if (!keplr) {
+      alert('Please install keplr extension');
+      return;
+    }
+
+    keplr.enable(keplrChainId);
+    setKeplr(keplr);
+
+    const offlineSigner = keplr.getOfflineSigner(keplrChainId);
+    const accounts = await offlineSigner.getAccounts();
+    setKeplrAccount(accounts[0]);
+
+  };
+  const disconnectKeplr = async () => {};
+  const runKeplrTx = async () => {
+    if (!keplr) {
+      alert('Please install keplr extension');
+      return;
+    }
+    if (!keplrAccount) {
+      alert('Please connect Keplr wallet');
+      return;
+    }
+
+    const offlineSigner = keplr.getOfflineSigner(keplrChainId);
+
+    // const client = new SigningCosmosClient(
+    //   "https://lcd-cosmoshub.keplr.app/rest",
+    //   keplrAccount.address,
+    //   offlineSigner,
+    // );
+    const client = await SigningStargateClient.connectWithSigner(
+      "https://rpc-osmosis.blockapsis.com",
+      offlineSigner
+    )
+
+    try {
+      const txObj = JSON.parse(tx);
+      const recipient = txObj.to;
+      const amount = txObj.value;
+      const fee = txObj.gas;
+      console.log('Tx Info:', keplrAccount.address, recipient, amount, fee);
+      const result = await client.sendTokens(keplrAccount.address, recipient, amount, fee, '');
+      console.log('Sent successfully', result);
+    } catch (e) {
+      console.log('Tx running error:', e);
+    }
   };
 
   const runTx = async () => {
@@ -79,48 +136,29 @@ const Home = () => {
       <h1 className="text-3xl font-bold underline">
         Demo Transaction
       </h1>
-      <div className="mt-10 flex gap-4">
-        <button
-          className="bg-orange-400 px-6 py-4 rounded text-white hover:bg-orange-500 active:bg-orange-600"
-          onClick={!!account ? disconnect : connect}
-        >
-          {!!account ? 'Disconnect Metamask': 'Connect Metamask'}
-        </button>
-        <button
-          className="bg-orange-400 px-6 py-4 rounded text-white hover:bg-orange-500 active:bg-orange-600"
-          onClick={!!account ? disconnect : connectKeplr}
-        >
-          {!!account ? 'Disconnect Keplr': 'Connect Keplr'}
-        </button>
-        <button
-          className="bg-blue-400 px-6 py-4 rounded text-white hover:bg-blue-500 active:bg-blue-600"
-          onClick={runTx}
-        >
-          Run Transaction
-        </button>
-        <button
-          className="bg-blue-700 px-6 py-4 rounded text-white hover:bg-blue-800 active:bg-blue-900"
-          onClick={signMessage}
-        >
-          Sign Message
-        </button>
-        <button
-          className="bg-purple-700 px-6 py-4 rounded text-white hover:bg-purple-800 active:bg-purple-900"
-          onClick={getEncPubKey}
-        >
-          Encryption Key
-        </button>
-        <button
-          className="bg-orange-700 px-6 py-4 rounded text-white hover:bg-orange-800 active:bg-orange-900"
-          onClick={decryptMessage}
-        >
-          Decrypt Message
-        </button>
-      </div>
+      <Metamask
+        account={account}
+        connect={connect}
+        disconnect={disconnect}
+        runTx={runTx}
+        signMessage={signMessage}
+        getEncPubKey={getEncPubKey}
+        decryptMessage={decryptMessage}
+      />
+      <KeplrWallet
+        account={keplrAccount?.address}
+        connect={connectKeplr}
+        disconnect={disconnectKeplr}
+        runTx={runKeplrTx}
+      />
+
       <div className="mt-10 flex flex-col gap-4">
-        <p>Connection Status: {!!account ? 'Connected' : 'Disconnected'}</p>
-        <p>Selected Network: {chainId ?? ''}</p>
-        <p>Wallet Address: {account}</p>
+        <p>Metamask Status: {!!account ? 'Connected' : 'Disconnected'}</p>
+        <p>Metamask Network: {chainId ?? ''}</p>
+        <p>Metamask Address: {account}</p>
+        <p>Keplr Status: {!!keplrAccount?.address ? 'Connected' : 'Disconnected'}</p>
+        <p>Keplr Network: {keplrChainId ?? ''}</p>
+        <p>Keplr Address: {keplrAccount?.address}</p>
         <p>Returned TxHash: {txHash ?? ''}</p>
         <p>Encryption Public Key: {encryptionPublicKey ?? ''}</p>
         <textarea
