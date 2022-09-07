@@ -1,17 +1,34 @@
-import { getKeplrFromWindow } from '@keplr-wallet/stores';
-import { AccountData, SigningCosmosClient } from '@cosmjs/launchpad';
+import { AccountData } from '@cosmjs/launchpad';
 import { useState } from "react";
 import useAuth from "./hooks/useAuth";
 import Metamask from './components/Metamask';
 import KeplrWallet from './components/Keplr';
-import { Keplr } from '@keplr-wallet/types';
+import { Keplr, ChainInfo } from '@keplr-wallet/types';
 import { SigningStargateClient } from '@cosmjs/stargate';
+import { AssetConfig, Environment, loadAssets } from '@axelar-network/axelarjs-sdk';
 
 require('dotenv');
 
-declare var window: any;
-// const RPC_URL = process.env.RPC_URL || 'https://rpc.sentry-01.theta-testnet.polypore.xyz';
-const keplrChainId = 'cosmoshub-4';
+declare const window: Window &
+  typeof globalThis & {
+    keplr: any,
+    ethereum: any
+  }
+
+
+const cosmos = {
+  chainId: 'cosmoshub-4',
+  restEndpoint: "https://api.cosmos.network",
+  rpcEndpoint: 'https://cosmoshub-4--rpc--full.datahub.figment.io/apikey/6d8baa3d3e97e427db4bd7ffcfb21be4',
+  chainInfo: {
+    feeCurrencies: [
+      { coinDenom: "ATOM", coinMinimalDenom: "uatom", coinDecimals: 6 },
+    ],
+  } as ChainInfo,
+  channelMap: { "axelar": "channel-293" }
+};
+
+const ALL_ASSETS: Promise<AssetConfig[]> = loadAssets({ environment: Environment.MAINNET });
 
 const sendTransaction = async (data: any) => {
   try {
@@ -35,20 +52,20 @@ const Home = () => {
   const [keplrAccount, setKeplrAccount] = useState<AccountData>();
 
   const connectKeplr = async () => {
-    const keplr = await getKeplrFromWindow();
+    const keplr = window.keplr;
     if (!keplr) {
       alert('Please install keplr extension');
       return;
     }
 
-    keplr.enable(keplrChainId);
+    keplr.enable(cosmos.chainId);
     setKeplr(keplr);
 
-    const offlineSigner = keplr.getOfflineSigner(keplrChainId);
-    const accounts = await offlineSigner.getAccounts();
-    setKeplrAccount(accounts[0]);
-
+    const offlineSigner = await keplr.getOfflineSignerAuto(cosmos.chainId);
+    const [account] = await offlineSigner.getAccounts();
+    setKeplrAccount(account);
   };
+
   const disconnectKeplr = async () => {};
   const runKeplrTx = async () => {
     if (!keplr) {
@@ -60,16 +77,11 @@ const Home = () => {
       return;
     }
 
-    const offlineSigner = keplr.getOfflineSigner(keplrChainId);
+    const offlineSigner = await keplr.getOfflineSignerAuto(cosmos.chainId);
 
-    // const client = new SigningCosmosClient(
-    //   "https://lcd-cosmoshub.keplr.app/rest",
-    //   keplrAccount.address,
-    //   offlineSigner,
-    // );
     const client = await SigningStargateClient.connectWithSigner(
-      "https://rpc-osmosis.blockapsis.com",
-      offlineSigner
+      cosmos.rpcEndpoint,
+      offlineSigner,
     )
 
     try {
@@ -78,12 +90,12 @@ const Home = () => {
       const amount = txObj.value;
       const fee = txObj.gas;
       console.log('Tx Info:', keplrAccount.address, recipient, amount, fee);
-      const result = await client.sendTokens(keplrAccount.address, recipient, amount, fee, '');
+      const result = await client.sendTokens(keplrAccount.address, recipient, [{ denom: 'uatom', amount }], { amount, gas: fee }, '');
       console.log('Sent successfully', result);
     } catch (e) {
       console.log('Tx running error:', e);
     }
-  };
+};
 
   const runTx = async () => {
     try {
@@ -157,7 +169,7 @@ const Home = () => {
         <p>Metamask Network: {chainId ?? ''}</p>
         <p>Metamask Address: {account}</p>
         <p>Keplr Status: {!!keplrAccount?.address ? 'Connected' : 'Disconnected'}</p>
-        <p>Keplr Network: {keplrChainId ?? ''}</p>
+        <p>Keplr Network: {cosmos.chainId ?? ''}</p>
         <p>Keplr Address: {keplrAccount?.address}</p>
         <p>Returned TxHash: {txHash ?? ''}</p>
         <p>Encryption Public Key: {encryptionPublicKey ?? ''}</p>
