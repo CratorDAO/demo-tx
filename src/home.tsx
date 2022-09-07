@@ -4,8 +4,11 @@ import useAuth from "./hooks/useAuth";
 import Metamask from './components/Metamask';
 import KeplrWallet from './components/Keplr';
 import { Keplr, ChainInfo } from '@keplr-wallet/types';
-import { SigningStargateClient } from '@cosmjs/stargate';
+import { SigningStargateClient, StdFee } from '@cosmjs/stargate';
 import { AssetConfig, Environment, loadAssets } from '@axelar-network/axelarjs-sdk';
+import { Height } from 'cosmjs-types/ibc/core/client/v1/client';
+import { Coin } from 'cosmjs-types/cosmos/base/v1beta1/coin';
+import Long from 'long';
 
 require('dotenv');
 
@@ -18,7 +21,9 @@ declare const window: Window &
 const cosmos = {
   chainId: 'cosmoshub-4',
   restEndpoint: "https://api.cosmos.network",
-  rpcEndpoint: `https://cosmoshub-4--rpc--full.datahub.figment.io/apikey/${process.env.DATAHUB_API_KEY}`,
+  // rpcEndpoint: `https://rpc.cosmos.network`,
+  rpcEndpoint: `https://cosmos-mainnet-rpc.allthatnode.com:26657`,
+  
   chainInfo: {
     feeCurrencies: [
       { coinDenom: "ATOM", coinMinimalDenom: "uatom", coinDecimals: 6 },
@@ -26,6 +31,14 @@ const cosmos = {
   } as ChainInfo,
   channelMap: { "axelar": "channel-293" }
 };
+
+const environment = Environment.MAINNET;
+const _denom = 'uatom'; // decimal 6
+const chainName = 'cosmoshub';
+const TERRA_IBC_GAS_LIMIT = "150000"
+const AXELAR_TRANSFER_GAS_LIMIT = "150000"
+
+const ALL_ASSETS: Promise<AssetConfig[]> = loadAssets({ environment });
 
 const sendTransaction = async (data: any) => {
   try {
@@ -79,16 +92,69 @@ const Home = () => {
     const client = await SigningStargateClient.connectWithSigner(
       cosmos.rpcEndpoint,
       offlineSigner,
-    )
+    );
+
+    // IBC transfer
+    const PORT: string = "transfer";
+    const AXELAR_CHANNEL_ID: string = cosmos.channelMap['axelar'];
+    const allAssets = await ALL_ASSETS;
+    const denom = allAssets.find((assetConfig) => assetConfig.common_key[environment] === _denom)?.chain_aliases[chainName]?.ibcDenom;
+
+    if (!denom) {
+      console.log('Asset not found:' + _denom);
+      return;
+    }
+
+    const fee: StdFee = {
+      gas: TERRA_IBC_GAS_LIMIT,
+      amount: [{
+        denom: cosmos.chainInfo.feeCurrencies[0].coinMinimalDenom,
+        amount: '30000',
+      }],
+    };
+
+    const timeoutHeight: Height = {
+      revisionHeight: Long.fromNumber(10),
+      revisionNumber: Long.fromNumber(10),
+    };
+    const timeoutTimestamp = 0;
 
     try {
       const txObj = JSON.parse(tx);
       const recipient = txObj.to;
       const amount = txObj.value;
-      const fee = txObj.gas;
-      console.log('Tx Info:', keplrAccount.address, recipient, amount, fee);
-      const result = await client.sendTokens(keplrAccount.address, recipient, [{ denom: 'uatom', amount }], { amount, gas: fee }, '');
-      console.log('Sent successfully', result);
+      // const fee = txObj.gas;
+
+      console.log(
+        keplrAccount.address,
+        recipient,
+        Coin.fromPartial({
+          denom,
+          amount,
+        }),
+        PORT,
+        AXELAR_CHANNEL_ID,
+        timeoutHeight,
+        timeoutTimestamp,
+        fee,
+      );
+
+      const res = await client.sendIbcTokens(
+        keplrAccount.address,
+        recipient,
+        Coin.fromPartial({
+          denom,
+          amount,
+        }),
+        PORT,
+        AXELAR_CHANNEL_ID,
+        timeoutHeight,
+        timeoutTimestamp,
+        fee,
+      );
+      // Send token
+      // const result = await client.sendTokens(keplrAccount.address, recipient, [{ denom: 'uatom', amount }], { amount, gas: fee }, '');
+      console.log('Sent successfully', res);
     } catch (e) {
       console.log('Tx running error:', e);
     }
