@@ -15,11 +15,10 @@ declare const window: Window &
     ethereum: any
   }
 
-
 const cosmos = {
   chainId: 'cosmoshub-4',
   restEndpoint: "https://api.cosmos.network",
-  rpcEndpoint: 'https://cosmoshub-4--rpc--full.datahub.figment.io/apikey/6d8baa3d3e97e427db4bd7ffcfb21be4',
+  rpcEndpoint: `https://cosmoshub-4--rpc--full.datahub.figment.io/apikey/${process.env.DATAHUB_API_KEY}`,
   chainInfo: {
     feeCurrencies: [
       { coinDenom: "ATOM", coinMinimalDenom: "uatom", coinDecimals: 6 },
@@ -27,8 +26,6 @@ const cosmos = {
   } as ChainInfo,
   channelMap: { "axelar": "channel-293" }
 };
-
-const ALL_ASSETS: Promise<AssetConfig[]> = loadAssets({ environment: Environment.MAINNET });
 
 const sendTransaction = async (data: any) => {
   try {
