@@ -12,7 +12,7 @@ const Keplr: React.FC<Props> = ({
   runTx,
 }) => (
   <div className="mt-10">
-    <p>Keplr Wallet</p>
+    <p>Keplr Wallet (CosmosHub -&gt; Evm Chains)</p>
     <div className="flex gap-4">
       <button
         className="bg-orange-400 px-6 py-4 rounded text-white hover:bg-orange-500 active:bg-orange-600"

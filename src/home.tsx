@@ -36,7 +36,6 @@ const environment = Environment.MAINNET;
 const _denom = 'uatom'; // decimal 6
 const chainName = 'cosmoshub';
 const TERRA_IBC_GAS_LIMIT = "150000"
-const AXELAR_TRANSFER_GAS_LIMIT = "150000"
 
 const ALL_ASSETS: Promise<AssetConfig[]> = loadAssets({ environment });
 
