@@ -206,7 +206,7 @@ const Home = () => {
   }
 
   return (
-    <div className="container mx-auto pt-10">
+    <div className="container mx-auto pt-10 px-20">
       <h1 className="text-3xl font-bold underline">
         Demo Transaction
       </h1>
