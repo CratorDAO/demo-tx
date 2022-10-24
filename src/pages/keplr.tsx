@@ -1,8 +1,5 @@
-import { AccountData } from '@cosmjs/launchpad';
 import { useState } from "react";
-import useAuth from "./hooks/useAuth";
-import Metamask from './components/Metamask';
-import KeplrWallet from './components/Keplr';
+import { AccountData } from '@cosmjs/launchpad';
 import { Keplr, ChainInfo } from '@keplr-wallet/types';
 import { SigningStargateClient, StdFee } from '@cosmjs/stargate';
 import { AssetConfig, Environment, loadAssets } from '@axelar-network/axelarjs-sdk';
@@ -21,7 +18,6 @@ declare const window: Window &
 const cosmos = {
   chainId: 'cosmoshub-4',
   restEndpoint: "https://api.cosmos.network",
-  // rpcEndpoint: `https://rpc.cosmos.network`,
   rpcEndpoint: `https://cosmos-mainnet-rpc.allthatnode.com:26657`,
   
   chainInfo: {
@@ -39,28 +35,12 @@ const TERRA_IBC_GAS_LIMIT = "150000"
 
 const ALL_ASSETS: Promise<AssetConfig[]> = loadAssets({ environment });
 
-const sendTransaction = async (data: any) => {
-  try {
-    const txHash = await window.ethereum.request({
-      method: 'eth_sendTransaction',
-      params: [data],
-    });
-    return txHash;
-  } catch (e) {
-    console.log(e);
-  }
-}
-
-const Home = () => {
-  const { account, chainId, connect, disconnect } = useAuth();
+const KeplrWallet = () => {
   const [tx, setTx] = useState('');
-  const [txHash, setTxHash] = useState('');
-  const [encryptionPublicKey, setEncryptionPublicKey] = useState('');
-  const [decryptedData, setDecryptedData] = useState('');
-  const [keplr, setKeplr] = useState<Keplr>();
+  const [wallet, setWallet] = useState<Keplr>();
   const [keplrAccount, setKeplrAccount] = useState<AccountData>();
 
-  const connectKeplr = async () => {
+  const connect = async () => {
     const keplr = window.keplr;
     if (!keplr) {
       alert('Please install keplr extension');
@@ -68,16 +48,16 @@ const Home = () => {
     }
 
     keplr.enable(cosmos.chainId);
-    setKeplr(keplr);
+    setWallet(keplr);
 
     const offlineSigner = await keplr.getOfflineSignerAuto(cosmos.chainId);
     const [account] = await offlineSigner.getAccounts();
     setKeplrAccount(account);
   };
 
-  const disconnectKeplr = async () => {};
+  const disconnect = async () => {};
   const runKeplrTx = async () => {
-    if (!keplr) {
+    if (!wallet) {
       alert('Please install keplr extension');
       return;
     }
@@ -86,7 +66,7 @@ const Home = () => {
       return;
     }
 
-    const offlineSigner = await keplr.getOfflineSignerAuto(cosmos.chainId);
+    const offlineSigner = await wallet.getOfflineSignerAuto(cosmos.chainId);
 
     const client = await SigningStargateClient.connectWithSigner(
       cosmos.rpcEndpoint,
@@ -122,7 +102,6 @@ const Home = () => {
       const txObj = JSON.parse(tx);
       const recipient = txObj.to;
       const amount = txObj.value;
-      // const fee = txObj.gas;
 
       console.log(
         keplrAccount.address,
@@ -151,90 +130,36 @@ const Home = () => {
         timeoutTimestamp,
         fee,
       );
-      // Send token
-      // const result = await client.sendTokens(keplrAccount.address, recipient, [{ denom: 'uatom', amount }], { amount, gas: fee }, '');
       console.log('Sent successfully', res);
     } catch (e) {
       console.log('Tx running error:', e);
     }
-};
-
-  const runTx = async () => {
-    try {
-      const txObj = JSON.parse(tx);
-      const hash = await sendTransaction(txObj);
-      setTxHash(hash);
-    } catch (e) {
-      console.log('Tx running error:', e);
-    }
-  }
-
-  const signMessage = async () => {
-    try {
-      const signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [tx, account],
-      });
-      setTxHash(signature);
-    } catch (e) {
-      console.log('Signing error:', e);
-    }
-  }
-
-  const getEncPubKey = async () => {
-    try {
-      const encryptionPublicKey = await window.ethereum.request({
-        method: 'eth_getEncryptionPublicKey',
-        params: [account],
-      });
-      setEncryptionPublicKey(encryptionPublicKey);
-    } catch (e) {
-      console.log('Encryption error:', e);
-    }
-  }
-
-  const decryptMessage = async () => {
-    try {
-      const callData = await window.ethereum.request({
-        method: 'eth_decrypt',
-        params: [tx, account]
-      });
-      setDecryptedData(callData);
-    } catch (e) {
-      console.log('Encryption error:', e);
-    }
-  }
+	};
 
   return (
-    <div className="container mx-auto pt-10 px-20">
-      <h1 className="text-3xl font-bold underline">
-        Demo Transaction
-      </h1>
-      <Metamask
-        account={account}
-        connect={connect}
-        disconnect={disconnect}
-        runTx={runTx}
-        signMessage={signMessage}
-        getEncPubKey={getEncPubKey}
-        decryptMessage={decryptMessage}
-      />
-      <KeplrWallet
-        account={keplrAccount?.address}
-        connect={connectKeplr}
-        disconnect={disconnectKeplr}
-        runTx={runKeplrTx}
-      />
+    <div>
+			<div className="mt-10">
+				<p>Keplr Wallet (CosmosHub -&gt; Evm Chains)</p>
+				<div className="flex gap-4">
+					<button
+						className="bg-orange-400 px-6 py-4 rounded text-white hover:bg-orange-500 active:bg-orange-600"
+						onClick={() => !!wallet ? disconnect() : connect()}
+					>
+						{!!wallet ? 'Disconnect Keplr': 'Connect Keplr'}
+					</button>
+					<button
+						className="bg-blue-400 px-6 py-4 rounded text-white hover:bg-blue-500 active:bg-blue-600"
+						onClick={() => runKeplrTx()}
+					>
+						Run Transaction
+					</button>
+				</div>
+			</div>
 
       <div className="mt-10 flex flex-col gap-4">
-        <p>Metamask Status: {!!account ? 'Connected' : 'Disconnected'}</p>
-        <p>Metamask Network: {chainId ?? ''}</p>
-        <p>Metamask Address: {account}</p>
         <p>Keplr Status: {!!keplrAccount?.address ? 'Connected' : 'Disconnected'}</p>
         <p>Keplr Network: {cosmos.chainId ?? ''}</p>
         <p>Keplr Address: {keplrAccount?.address}</p>
-        <p>Returned TxHash: {txHash ?? ''}</p>
-        <p>Encryption Public Key: {encryptionPublicKey ?? ''}</p>
         <textarea
           className="border p-4 rounded"
           placeholder={`
@@ -252,10 +177,9 @@ const Home = () => {
           autoFocus
           onChange={(e) => setTx(e.target.value)}
         ></textarea>
-        <p className="break-all">Decrypted Data: {decryptedData ?? ''}</p>
       </div>
     </div>
   );
 }
 
-export default Home;
+export default KeplrWallet;
