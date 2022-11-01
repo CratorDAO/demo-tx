@@ -8,9 +8,9 @@ const Layout: React.FC = () => {
       </h1>
 
       <div className="pt-10 flex gap-4">
-        <Link to="/metamask" className="bg-orange-400 px-6 py-4 rounded text-white hover:bg-orange-500 active:bg-orange-600">Metamask Wallet</Link>
+        <Link to="/metamask" className="bg-blue-400 px-6 py-4 rounded text-white hover:bg-blue-500 active:bg-blue-600">Metamask Wallet</Link>
         <Link to="/keplr" className="bg-blue-400 px-6 py-4 rounded text-white hover:bg-blue-500 active:bg-blue-600">Keplr Wallet</Link>
-        <Link to="/maiar" className="bg-purple-700 px-6 py-4 rounded text-white hover:bg-purple-800 active:bg-purple-900">Maiar Wallet</Link>
+        <Link to="/maiar" className="bg-blue-400 px-6 py-4 rounded text-white hover:bg-blue-500 active:bg-blue-600">Maiar Wallet</Link>
       </div>
       <Outlet />
 		</div>
