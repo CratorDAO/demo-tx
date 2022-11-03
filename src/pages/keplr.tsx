@@ -29,7 +29,7 @@ const cosmos = {
 };
 
 const environment = Environment.MAINNET;
-const _denom = 'uatom'; // decimal 6
+const _denom = 'uatom';  // decimal 6, eg. uusdc
 const chainName = 'cosmoshub';
 const TERRA_IBC_GAS_LIMIT = "150000"
 
