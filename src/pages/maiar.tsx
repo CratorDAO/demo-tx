@@ -17,7 +17,9 @@ const MaiarWallet: React.FC = () => {
     console.log('disconnect');
   };
 
-  const runTx = () => {};
+  const runTx = () => {
+    
+  };
 
   return (
     <div>
