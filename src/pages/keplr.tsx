@@ -17,9 +17,13 @@ declare const window: Window &
 
 const cosmos = {
   chainId: 'cosmoshub-4',
-  restEndpoint: "https://api.cosmos.network",
-  rpcEndpoint: `https://cosmos-mainnet-rpc.allthatnode.com:26657`,
+  restEndpoint: "https://cosmos-mainnet-rpc.allthatnode.com:1317",
+  rpcEndpoint: `https://cosmos-mainnet-archive.allthatnode.com:26657`,
   
+  // chainId: 'osmosis',
+  // restEndpoint: "https://cosmos-mainnet-rpc.allthatnode.com:1317",
+  // rpcEndpoint: `https://cosmos-mainnet-archive.allthatnode.com:26657`,
+
   chainInfo: {
     feeCurrencies: [
       { coinDenom: "ATOM", coinMinimalDenom: "uatom", coinDecimals: 6 },
@@ -37,6 +41,7 @@ const ALL_ASSETS: Promise<AssetConfig[]> = loadAssets({ environment });
 
 const KeplrWallet = () => {
   const [tx, setTx] = useState('');
+  const [txHash, setTxHash] = useState('');
   const [wallet, setWallet] = useState<Keplr>();
   const [keplrAccount, setKeplrAccount] = useState<AccountData>();
 
@@ -56,6 +61,28 @@ const KeplrWallet = () => {
   };
 
   const disconnect = async () => {};
+
+  const getBalance = async () => {
+    if (!wallet) {
+      alert('Please install keplr extension');
+      return;
+    }
+    if (!keplrAccount) {
+      alert('Please connect Keplr wallet');
+      return;
+    }
+
+    const offlineSigner = await wallet.getOfflineSignerAuto(cosmos.chainId);
+
+    const client = await SigningStargateClient.connectWithSigner(
+      cosmos.rpcEndpoint,
+      offlineSigner,
+    );
+
+    const balance = await client.getBalance(keplrAccount.address, 'ibc/932D6003DA334ECBC5B23A071B4287D0A5CC97331197FE9F1C0689BA002A8421');
+    console.log('Balance:', balance);
+  };
+
   const runKeplrTx = async () => {
     if (!wallet) {
       alert('Please install keplr extension');
@@ -130,6 +157,7 @@ const KeplrWallet = () => {
         timeoutTimestamp,
         fee,
       );
+      setTxHash(res.transactionHash);
       console.log('Sent successfully', res);
     } catch (e) {
       console.log('Tx running error:', e);
@@ -153,6 +181,12 @@ const KeplrWallet = () => {
 					>
 						Run Transaction
 					</button>
+					<button
+						className="bg-blue-400 px-6 py-4 rounded text-white hover:bg-blue-500 active:bg-blue-600"
+						onClick={() => getBalance()}
+					>
+						Get Balance
+					</button>
 				</div>
 			</div>
 
@@ -160,6 +194,7 @@ const KeplrWallet = () => {
         <p>Keplr Status: {!!keplrAccount?.address ? 'Connected' : 'Disconnected'}</p>
         <p>Keplr Network: {cosmos.chainId ?? ''}</p>
         <p>Keplr Address: {keplrAccount?.address}</p>
+        <p>Returned TxHash: {txHash ?? ''}</p>
         <textarea
           className="border p-4 rounded"
           placeholder={`
