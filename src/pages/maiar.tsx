@@ -1,9 +1,15 @@
 import { useState } from 'react';
-import { ExtensionProvider } from '@elrondnetwork/erdjs-extension-provider'
+import { ExtensionProvider } from '@elrondnetwork/erdjs-extension-provider';
+import { Address, Transaction, TransactionPayload, TransactionVersion } from '@elrondnetwork/erdjs';
+import axios from 'axios';
+
+const ELROND_API_URL = 'https://gateway.elrond.com/transaction';
 
 const MaiarWallet: React.FC = () => {
   const [account, setAccount] = useState('');
+  const [provider, setProvider] = useState<ExtensionProvider>();
   const [tx, setTx] = useState('');
+  const [txHash, setTxHash] = useState('');
 
   const connect = async () => {
     const provider = ExtensionProvider.getInstance();
@@ -11,14 +17,58 @@ const MaiarWallet: React.FC = () => {
     await provider.login();
     const address = await provider.getAddress();
     setAccount(address);
+    setProvider(provider);
   };
 
-  const disconnect = () => {
-    console.log('disconnect');
+  const disconnect = async () => {
+    await provider?.logout();
+    const address = await provider?.getAddress();
+    setAccount(address || '');
+    setProvider(provider);
   };
 
-  const runTx = () => {
-    
+  const runTx = async () => {
+    const txObj = JSON.parse(tx);
+    let nonce = 0;
+    try {
+      const res = await axios.get(`${ELROND_API_URL}/pool?by-sender=${txObj.from}&last-nonce=true`);
+      nonce = res.data.data;
+    } catch (e) {
+      console.log(e);
+    }
+
+    const t: Transaction = new Transaction({
+      nonce,
+      value: txObj.value,
+      receiver: new Address(txObj.to),
+      sender: new Address(txObj.from),
+      gasPrice: Number(txObj.gas),
+      gasLimit: 50000000,
+      data: new TransactionPayload(txObj.data),
+      chainID: '1',
+      version: new TransactionVersion(1),
+
+    });
+    const signedTx = await provider?.signTransaction(t);
+
+    // Send signed transaction
+    const params = {
+      nonce: signedTx?.getNonce(),
+      value: signedTx?.getValue().toString(),
+      receiver: signedTx?.getReceiver().bech32(),
+      sender: signedTx?.getSender().bech32(),
+      gasPrice: signedTx?.getGasPrice(),
+      gasLimit: signedTx?.getGasLimit(),
+      data: signedTx?.getData().encoded(),
+      signature: signedTx?.getSignature().hex(),
+      chainID: signedTx?.getChainID(),
+      version: signedTx?.getVersion().valueOf(),
+      options: signedTx?.getOptions().valueOf(),
+    };
+
+    const { data } = await axios.post(`${ELROND_API_URL}/send`, params);
+
+    setTxHash(data.data.txHash);
   };
 
   return (
@@ -44,6 +94,7 @@ const MaiarWallet: React.FC = () => {
       <div className="mt-10 flex flex-col gap-4">
         <p>Maiar Status: {!!account ? 'Connected' : 'Disconnected'}</p>
         <p>Maiar Address: {account}</p>
+        <p>Returned TxHash: {txHash ?? ''}</p>
         <textarea
           className="border p-4 rounded"
           placeholder={`

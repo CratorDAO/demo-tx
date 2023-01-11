@@ -17,6 +17,7 @@ module.exports = function override(config, env) {
         fs: false,
         string_decoder: false,
         os: false,
+        url: false,
     }
     return config
 }
