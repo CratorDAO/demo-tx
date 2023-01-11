@@ -3,7 +3,7 @@ import { ExtensionProvider } from '@elrondnetwork/erdjs-extension-provider';
 import { Address, Transaction, TransactionPayload, TransactionVersion } from '@elrondnetwork/erdjs';
 import axios from 'axios';
 
-const ELROND_API_URL = 'https://gateway.elrond.com/transaction';
+const ELROND_API_URL = 'https://gateway.elrond.com';
 
 const MaiarWallet: React.FC = () => {
   const [account, setAccount] = useState('');
@@ -31,14 +31,14 @@ const MaiarWallet: React.FC = () => {
     const txObj = JSON.parse(tx);
     let nonce = 0;
     try {
-      const res = await axios.get(`${ELROND_API_URL}/pool?by-sender=${txObj.from}&last-nonce=true`);
-      nonce = res.data.data;
+      const res = await axios.get(`${ELROND_API_URL}/address/${txObj.from}/nonce`);
+      nonce = res.data.data.nonce;
     } catch (e) {
       console.log(e);
     }
 
     const t: Transaction = new Transaction({
-      nonce,
+      nonce: nonce + 1,
       value: txObj.value,
       receiver: new Address(txObj.to),
       sender: new Address(txObj.from),
@@ -47,7 +47,6 @@ const MaiarWallet: React.FC = () => {
       data: new TransactionPayload(txObj.data),
       chainID: '1',
       version: new TransactionVersion(1),
-
     });
     const signedTx = await provider?.signTransaction(t);
 
@@ -66,7 +65,7 @@ const MaiarWallet: React.FC = () => {
       options: signedTx?.getOptions().valueOf(),
     };
 
-    const { data } = await axios.post(`${ELROND_API_URL}/send`, params);
+    const { data } = await axios.post(`${ELROND_API_URL}/transaction/send`, params);
 
     setTxHash(data.data.txHash);
   };
