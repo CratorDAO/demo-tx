@@ -5,6 +5,17 @@ import axios from 'axios';
 
 const GATEWAY_API_URL = 'https://gateway.multiversx.com';
 
+const getNonce = async (account: string) => {
+  let nonce = 0;
+  try {
+    const res = await axios.get(`${GATEWAY_API_URL}/address/${account}/nonce`);
+    nonce = res.data.data.nonce;
+  } catch (e) {
+    console.log(e);
+  }
+  return nonce;
+};
+
 const MultiversXWallet: React.FC = () => {
   const [account, setAccount] = useState('');
   const [provider, setProvider] = useState<ExtensionProvider>();
@@ -29,9 +40,18 @@ const MultiversXWallet: React.FC = () => {
 
   const runTx = async () => {
     const txObj = JSON.parse(tx);
+    if (Array.isArray(txObj)) {
+      executeTransactions(txObj);
+    } else {
+      executeTransaction(txObj);
+    }
+  };
+
+  const executeTransaction = async (txObj: any) => {
+    const nonce = await getNonce(account);
 
     const t: Transaction = new Transaction({
-      nonce: txObj.nonce,
+      nonce: txObj.nonce ?? nonce,
       value: txObj.value,
       receiver: new Address(txObj.to),
       sender: new Address(txObj.from),
@@ -59,9 +79,59 @@ const MultiversXWallet: React.FC = () => {
     };
 
     const { data } = await axios.post(`${GATEWAY_API_URL}/transaction/send`, params);
-
     const hash = data.data.txHash;
+
     setTxHash(hash);
+  };
+
+  const executeTransactions = async (txObjArr: any[]) => {
+    let nonce = await getNonce(account);
+    
+    let transactions = [];
+    for (const txObj of txObjArr) {
+      const t: Transaction = new Transaction({
+        nonce: txObj.nonce || nonce,
+        value: txObj.value,
+        receiver: new Address(txObj.to),
+        sender: new Address(txObj.from),
+        gasPrice: Number(txObj.gas),
+        gasLimit: 50000000,
+        data: new TransactionPayload(txObj.data),
+        chainID: '1',
+        version: new TransactionVersion(1),
+      });
+      nonce++;
+      
+      transactions.push(t);
+    }
+    
+    const signedTxs = await provider?.signTransactions(transactions);
+
+    if (!signedTxs) return;
+
+    // Send signed transaction
+    const paramsArr = [];
+    for (const signedTx of signedTxs) {
+      const params = {
+        nonce: signedTx?.getNonce(),
+        value: signedTx?.getValue().toString(),
+        receiver: signedTx?.getReceiver().bech32(),
+        sender: signedTx?.getSender().bech32(),
+        gasPrice: signedTx?.getGasPrice(),
+        gasLimit: signedTx?.getGasLimit(),
+        data: signedTx?.getData().encoded(),
+        signature: signedTx?.getSignature().hex(),
+        chainID: signedTx?.getChainID(),
+        version: signedTx?.getVersion().valueOf(),
+        options: signedTx?.getOptions().valueOf(),
+      };
+      paramsArr.push(params);
+    }
+
+    const { data } = await axios.post(`${GATEWAY_API_URL}/transaction/send-multiple`, paramsArr);
+    const hashes = data.data.txsHashes;
+
+    setTxHash(hashes[0] + '\n' + hashes[1]);
   };
 
   return (
