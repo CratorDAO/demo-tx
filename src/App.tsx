@@ -5,7 +5,7 @@ import getLibrary from "./hooks/getLibrary";
 import Layout from './pages/layout';
 import MetamaskWallet from './pages/metamask';
 import KeplrWallet from './pages/keplr';
-import MaiarWallet from './pages/maiar';
+import MultiversXWallet from './pages/multiversx';
 
 const NetworkContextName = 'NETWORK';
 const Web3ProviderNetwork = createWeb3ReactRoot(NetworkContextName);
@@ -20,7 +20,7 @@ function App() {
               <Route index element={<MetamaskWallet />} />
               <Route path="metamask" element={<MetamaskWallet />} />
               <Route path="keplr" element={<KeplrWallet />} />
-              <Route path="maiar" element={<MaiarWallet />} />
+              <Route path="multiversx" element={<MultiversXWallet />} />
             </Route>
           </Routes>
           {/* <Home /> */}

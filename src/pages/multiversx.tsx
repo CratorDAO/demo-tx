@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { ExtensionProvider } from '@elrondnetwork/erdjs-extension-provider';
-import { Address, Transaction, TransactionPayload, TransactionVersion } from '@elrondnetwork/erdjs';
+import { ExtensionProvider } from '@multiversx/sdk-extension-provider';
+import { Address, Transaction, TransactionPayload, TransactionVersion } from '@multiversx/sdk-core';
 import axios from 'axios';
 
-const ELROND_API_URL = 'https://gateway.elrond.com';
+const GATEWAY_API_URL = 'https://gateway.multiversx.com';
 
-const MaiarWallet: React.FC = () => {
+const MultiversXWallet: React.FC = () => {
   const [account, setAccount] = useState('');
   const [provider, setProvider] = useState<ExtensionProvider>();
   const [tx, setTx] = useState('');
   const [txHash, setTxHash] = useState('');
-
+  
   const connect = async () => {
     const provider = ExtensionProvider.getInstance();
     await provider.init();
@@ -29,16 +29,9 @@ const MaiarWallet: React.FC = () => {
 
   const runTx = async () => {
     const txObj = JSON.parse(tx);
-    let nonce = 0;
-    try {
-      const res = await axios.get(`${ELROND_API_URL}/address/${txObj.from}/nonce`);
-      nonce = res.data.data.nonce;
-    } catch (e) {
-      console.log(e);
-    }
 
     const t: Transaction = new Transaction({
-      nonce: nonce + 1,
+      nonce: txObj.nonce,
       value: txObj.value,
       receiver: new Address(txObj.to),
       sender: new Address(txObj.from),
@@ -48,9 +41,9 @@ const MaiarWallet: React.FC = () => {
       chainID: '1',
       version: new TransactionVersion(1),
     });
+
     const signedTx = await provider?.signTransaction(t);
 
-    // Send signed transaction
     const params = {
       nonce: signedTx?.getNonce(),
       value: signedTx?.getValue().toString(),
@@ -65,21 +58,22 @@ const MaiarWallet: React.FC = () => {
       options: signedTx?.getOptions().valueOf(),
     };
 
-    const { data } = await axios.post(`${ELROND_API_URL}/transaction/send`, params);
+    const { data } = await axios.post(`${GATEWAY_API_URL}/transaction/send`, params);
 
-    setTxHash(data.data.txHash);
+    const hash = data.data.txHash;
+    setTxHash(hash);
   };
 
   return (
     <div>
 			<div className="mt-10">
-				<p>Maiar Wallet (Elrond -&gt; Ethereum)</p>
+				<p>MultiversX Wallet (Elrond -&gt; Ethereum)</p>
 				<div className="flex gap-4">
 					<button
 						className="bg-orange-400 px-6 py-4 rounded text-white hover:bg-orange-500 active:bg-orange-600"
 						onClick={() => !account ? connect() : disconnect()}
 					>
-						{!!account ? 'Disconnect Maiar': 'Connect Maiar'}
+						{!!account ? 'Disconnect MultiversX': 'Connect MultiversX'}
 					</button>
 					<button
 						className="bg-blue-400 px-6 py-4 rounded text-white hover:bg-blue-500 active:bg-blue-600"
@@ -91,9 +85,9 @@ const MaiarWallet: React.FC = () => {
 			</div>
 
       <div className="mt-10 flex flex-col gap-4">
-        <p>Maiar Status: {!!account ? 'Connected' : 'Disconnected'}</p>
-        <p>Maiar Address: {account}</p>
-        <p>Returned TxHash: {txHash ?? ''}</p>
+        <p>MultiversX Status: {!!account ? 'Connected' : 'Disconnected'}</p>
+        <p>MultiversX Address: {account}</p>
+        <p>Transaction: {`https://explorer.multiversx.com/transactions/${txHash}`}</p>
         <textarea
           className="border p-4 rounded"
           placeholder={`
@@ -116,4 +110,4 @@ const MaiarWallet: React.FC = () => {
   );
 };
 
-export default MaiarWallet;
+export default MultiversXWallet;
