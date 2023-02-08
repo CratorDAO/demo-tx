@@ -16,11 +16,23 @@ const getNonce = async (account: string) => {
   return nonce;
 };
 
+const getTxStatus = async (txHash: string) => {
+  try {
+    const { data } = await axios.get(`https://gateway.multiversx.com/transaction/${txHash}/status`);
+    if (!data.data) return 'not found';
+    return data.data.status;
+  } catch (e) {
+    console.log(e);
+  }
+  return 'Error';
+};
+
 const MultiversXWallet: React.FC = () => {
   const [account, setAccount] = useState('');
   const [provider, setProvider] = useState<ExtensionProvider>();
   const [tx, setTx] = useState('');
   const [txHash, setTxHash] = useState('');
+  const [txStatus, setTxStatus] = useState('');
   
   const connect = async () => {
     const provider = ExtensionProvider.getInstance();
@@ -41,10 +53,19 @@ const MultiversXWallet: React.FC = () => {
   const runTx = async () => {
     const txObj = JSON.parse(tx);
     if (Array.isArray(txObj)) {
-      executeTransactions(txObj);
+      await executeTransactions(txObj);
     } else {
-      executeTransaction(txObj);
+      await executeTransaction(txObj);
     }
+
+    const t = setInterval(async () => {
+      if (!txHash) return;
+      const status = await getTxStatus(txHash);
+      setTxStatus(status);
+      if (status !== 'pending' && status !== 'not found') {
+        clearInterval(t);
+      }
+    }, 1000);
   };
 
   const executeTransaction = async (txObj: any) => {
@@ -155,9 +176,10 @@ const MultiversXWallet: React.FC = () => {
 			</div>
 
       <div className="mt-10 flex flex-col gap-4">
-        <p>MultiversX Status: {!!account ? 'Connected' : 'Disconnected'}</p>
+        <p>Wallet Status: {!!account ? 'Connected' : 'Disconnected'}</p>
         <p>MultiversX Address: {account}</p>
-        <p>Transaction: {`https://explorer.multiversx.com/transactions/${txHash}`}</p>
+        <p>Transaction: <a href={`https://explorer.multiversx.com/transactions/${txHash}`} className="text-blue-600" rel="noreferrer" target="_blank">{txHash}</a></p>
+        <p>Tx Status: {txStatus}</p>
         <textarea
           className="border p-4 rounded"
           placeholder={`
